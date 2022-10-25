@@ -1,0 +1,1 @@
+{"model": "StackedLSTM(self.lstm_shapes=[128], self.dropout=0.2, self.depth=1)", "learning_rate": 0.001, "decay": 1e-06, "batch_size": 32, "epochs": 150, "validation_split": 0.2, "test_split": 0.2, "metrics": ["loss", "mean_absolute_error", "mean_squared_error"]}
