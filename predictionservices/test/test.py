@@ -5,20 +5,11 @@ import logging
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
 from dataProvidingServices.dataProviding import (
-    load_training_data,
+    load_data,
     load_market_data,
     load_news,
     transform_market_data
 )
-
-
-def test_transform_market_data(category, pair, start_date, end_date, training,
-                               resolution, sequence_length):
-    market_df, _, _ = load_market_data(category, pair, start_date, end_date, training, resolution, sequence_length)
-
-    market_df_transformed = transform_market_data(market_df, training, sequence_length)
-    print(market_df_transformed.describe())
-    print(market_df_transformed)
 
 
 def test_load_market_data(category, pair, start_date, end_date, training,
@@ -41,20 +32,21 @@ def test_load_training_data_eurusd(category, pair, news_keywords,
                                    start_date, end_date,
                                    resolution, sequence_length,
                                    training, query):
-    # s = datetime.utcnow().timestamp()
-    # three_years_ts = 94867200
-    # e = s - three_years_ts
-    X, y, dates = load_training_data(category, pair, start_date, end_date,
-                                     news_keywords, resolution=resolution, sequence_length=sequence_length,
-                                     training=training, query=query)
+    X_train, X_test, y_train, y_test, dates_train, dates_test, new_validation_split = \
+        load_data(category, pair, start_date, end_date,
+                  news_keywords, resolution=resolution, sequence_length=sequence_length,
+                  training=training, query=query)
 
-    print(X[0])
-    print(y[0])
-    print(dates[0])
+    print(f"{X_train.shape=}")
+    print(f"{X_test.shape=}")
+    print(f"{y_train.shape=}")
+    print(f"{y_test.shape=}")
 
-    print(f"{len(X)=}")
-    print(f"{len(y)=}")
-    print(f"{len(dates)=}")
+    print(f"{X_train[0]=}")
+    print(f"{y_train[0]=}")
+
+    print(f"{dates_train[0]=}, {dates_train[-1]=}")
+    print(f"{dates_test[0]=}, {dates_test[-1]=}")
 
 
 def main() -> None:
