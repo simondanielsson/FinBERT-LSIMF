@@ -4,9 +4,11 @@ import os
 import logging
 from datetime import datetime
 import json
+import regex as re
 
 import numpy as np
 import pandas as pd
+from keras.callbacks import ReduceLROnPlateau
 from matplotlib import pyplot as plt
 
 from LSTM import StackedLSTMFactory
@@ -114,13 +116,22 @@ def train_model(category, pair, news_keywords, model_factory: MarketModelFactory
     model_checkpoint_path = os.path.join(output_dir, model_name)
 
     callbacks = [
-        EarlyStopping(monitor='val_loss', patience=30, min_delta=0.00001),
         ModelCheckpoint(
             model_checkpoint_path,
             monitor='val_loss',
             save_best_only=True,
             save_freq='epoch'
-        )
+        ),
+        EarlyStopping(
+            monitor='val_loss',
+            patience=80,
+            min_delta=0.00001
+        ),
+        ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.2,
+            patience=10,
+        ),
     ]
 
     model.compile(
@@ -170,6 +181,7 @@ def train_model(category, pair, news_keywords, model_factory: MarketModelFactory
                 **training_params,
                 "validation_split": validation_split,
                 "test_split": test_split,
+                "callbacks": [re.findall(r"\.\p{Lu}\p{L}+", str(callback))[-1][1:] for callback in callbacks],
                 "metrics": metrics
             }, f)
 
@@ -185,7 +197,8 @@ def plot_metrics(history, metrics, output_dir, model_factory):
     for index, metric in enumerate(metrics):
         plt.figure(f"{str(model_factory)}-{index}")
         plt.plot(history.history[metric], label=metric)
-        plt.plot(history.history[f'val_{metric}'], label=f'val_{metric}')
+        if not metric == 'lr':
+            plt.plot(history.history[f'val_{metric}'], label=f'val_{metric}')
         # plt.ylim([0, 10])
         plt.xlabel('Epoch')
         plt.ylabel(f'{metric} [Close]')
@@ -205,9 +218,9 @@ def main():
 
     data_loader = MarketDataLoader()
 
-    for depth in [2]:
+    for depth in [1, 2, 3, 4]:
         model_factory = StackedLSTMFactory(lstm_shapes=[128]*depth, depth=depth, dropout=0.2)
-        training_params = {'learning_rate': 1e-3, 'decay': 1e-6, 'batch_size': 32, 'epochs': 1}
+        training_params = {'learning_rate': 1e-3, 'decay': 1e-6, 'batch_size': 32, 'epochs': 150}
 
         train_model(
             category='Forex',
