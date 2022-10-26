@@ -7,7 +7,7 @@ import logging
 
 
 def get_test_summary_path():
-    return os.path.join(ROOT_DIR, 'outputFiles', 'test_summary.csv')
+    return os.path.join(ROOT_DIR, 'outputFiles', 'summaries', 'test_summary.csv')
 
 
 def create_test_results() -> None:
@@ -64,12 +64,18 @@ def update_test_summary(new_result_dirpath) -> None:
 
     run_date = pd.Series({'run_date': new_result_dirpath.split('/')[-1][-11:]})
 
-    current_results = pd.read_csv(get_test_summary_path())
-
     # add to previous results
     new_results = pd.DataFrame(pd.concat([test_metrics, val_loss, model_config_s, run_date])).T
 
-    pd.concat([current_results, new_results])\
+    try:
+        current_results = pd.read_csv(get_test_summary_path())
+    except FileNotFoundError:
+        # we use a new summary file
+        current_results = pd.DataFrame()
+
+    concat_results = pd.concat([current_results, new_results])
+
+    concat_results\
         .sort_values('loss')\
         .to_csv(get_test_summary_path(), index=False)
 
@@ -77,7 +83,7 @@ def update_test_summary(new_result_dirpath) -> None:
 
 
 if __name__ == "__main__":
-    create_test_results()
+    # create_test_results()
 
     # print the current test set experimentation summary
     summary = pd.read_csv(get_test_summary_path())
