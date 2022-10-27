@@ -352,17 +352,6 @@ def load_raw_data(category, pair, start_date, end_date, news_keywords,
     return market_df, news_df
 
 
-
-def rolling_window_normalization(market_df, sequence_length):
-    # TODO: check if we should do this
-    sequential_data = []  # this is a list that will CONTAIN the sequences
-    prev_days = deque(maxlen=sequence_length)
-    for d, row in market_df.iterrows():
-        prev_days.append([n for n in row[:-1]])  # store all but the target
-        if len(prev_days) == sequence_length:  # make sure we have 10 sequences!
-            return True
-
-
 def coalesce_data(market_df: pd.DataFrame, mood_series: pd.DataFrame) -> pd.DataFrame:
     logging.info("Coalescing market and news data")
 
@@ -473,7 +462,7 @@ def transform_news_data(news_df: pd.DataFrame) -> pd.DataFrame:
     # convert types
     news_df.loc[:, 'title'] = news_df['title'].astype(str)
     news_df.loc[:, 'articleBody'] = news_df['articleBody'].astype(str)
-    news_df.loc[:, 'Date'] = pd.to_datetime(news_df['Date'], utc=True)
+    news_df['Date'] = pd.to_datetime(news_df['Date'], utc=True)
 
     news_df = news_df.set_index('Date')
 
@@ -487,21 +476,27 @@ def normalize_market_data(market_df: pd.DataFrame, scaler) -> tuple:
     logging.debug(f"{scaler=}")
 
     logging.info(f"Normalizing non-target columns")
-    assert 'target' in market_df
+    logging.debug(f"Before normalizing:\n{market_df.describe()}")
 
-    for col in market_df.columns.drop('target'):  # do not normalize the target column
-        market_df[col] = market_df[col].astype(float)
-        market_df = market_df.replace([np.inf, -np.inf], None)
+    features = market_df.drop('target', axis=1)
+
+    for col in features.columns:  # do not normalize the target column
+        features[col] = market_df[col].astype(float)
+        features = features.replace([np.inf, -np.inf], None)
 
     if not scaler:
-        logging.info("Creating new scaler and fitting it on the current data")
+        logging.info("Creating new scaler and fitting it on the current features")
         scaler = StandardScaler()
-        scaler.fit(market_df) # TODO: fix bool problem
+        scaler.fit(features)
 
-    logging.debug(f"Scaler: {type(scaler)}, {scaler}")
+    logging.debug(f"Trained scaler params:\nmean:\n{pd.Series(scaler.mean_, index=features.columns)}\n\nstd:\n{pd.Series(np.sqrt(scaler.var_), index=features.columns)}")
 
-    market_np_scaled = scaler.transform(market_df)
-    market_df_scaled = pd.DataFrame(market_np_scaled, columns=market_df.columns, index=market_df.index)
+    features_np_scaled = scaler.transform(features)
+    features_df_scaled = pd.DataFrame(features_np_scaled, columns=features.columns, index=features.index)
+
+    market_df_scaled = pd.concat([features_df_scaled, market_df['target']], axis=1)
+
+    logging.debug(f'After normalizing:\n{market_df_scaled.describe()}')
 
     return market_df_scaled, scaler
 
@@ -532,7 +527,7 @@ def transform_market_data(market_df, *, scaler=None, Long=True, sequence_length=
     logging.info("Transforming market data")
     logging.debug(f"{type(market_df)=}")
 
-    market_df.loc[:, 'Date'] = pd.to_datetime(market_df['Date'], utc=True)
+    market_df['Date'] = pd.to_datetime(market_df['Date'], utc=True)
     market_df = market_df.set_index('Date')
 
     if 'timestamp' in market_df.columns:
@@ -603,7 +598,10 @@ def transform_align_and_split(market_df, news_df,
                                                                        test_split=test_split,
                                                                        validation_split=validation_split)
 
+    logging.info("\n-- Transforming training data... --\n")
     market_df_scaled_train, scaler = transform_market_data(market_df_train, Long=Long, sequence_length=sequence_length)
+
+    logging.info("\n-- Transforming test data... --\n")
     market_df_scaled_test, _ = transform_market_data(market_df_test, scaler=scaler, Long=Long, sequence_length=sequence_length)
 
     # create mood series

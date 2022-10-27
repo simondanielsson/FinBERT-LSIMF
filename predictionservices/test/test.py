@@ -25,7 +25,7 @@ def test_load_news(category, news_keywords, start_date, end_date, training):
                      start_date=start_date, end_date=end_date, Long=training)
 
     print(news)
-    assert len(news.columns) == 6
+    assert len(news.columns) == 9
 
 
 def test_load_training_data_eurusd(category, pair, news_keywords,
