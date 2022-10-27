@@ -17,7 +17,7 @@ from summary import update_test_summary
 from definitions import ROOT_DIR
 from loader import MarketDataLoader
 
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from tensorflow.keras.losses import MeanAbsolutePercentageError
 from tensorflow.keras.metrics import MeanAbsoluteError, MeanSquaredError
 from tensorflow.keras.optimizers import Adam
@@ -129,8 +129,11 @@ def train_model(category, pair, news_keywords, model_factory: MarketModelFactory
         ),
         ReduceLROnPlateau(
             monitor='val_loss',
-            factor=0.2,
+            factor=0.5,
             patience=10,
+        ),
+        TensorBoard(
+            log_dir=os.path.join(output_dir, 'logs'),
         ),
     ]
 
@@ -218,22 +221,23 @@ def main():
 
     data_loader = MarketDataLoader()
 
-    for depth in [1, 2, 3, 4]:
-        model_factory = StackedLSTMFactory(lstm_shapes=[128]*depth, depth=depth, dropout=0.2)
-        training_params = {'learning_rate': 1e-3, 'decay': 1e-6, 'batch_size': 32, 'epochs': 150}
+    for depth in [2]:
+        for dropout in [0.5]:
+            model_factory = StackedLSTMFactory(lstm_shapes=[128]*depth, depth=depth, dropout=dropout)
+            training_params = {'learning_rate': 1e-3, 'decay': 1e-6, 'batch_size': 32, 'epochs': 150}
 
-        train_model(
-            category='Forex',
-            pair='EURUSD',
-            news_keywords='EURUSD',
-            model_factory=model_factory,
-            # model_path="/Users/simondanielsson/Documents/Theses/bsc/predictionservices/outputFiles/Forex/EURUSD/EURUSD-221021_1330/model.h5"
-            data_loader=data_loader,
-            training_params=training_params,
-            resolution=60,
-            sequence_length=7,
-            query=False,
-        )
+            train_model(
+                category='Forex',
+                pair='EURUSD',
+                news_keywords='EURUSD',
+                model_factory=model_factory,
+                # model_path="/Users/simondanielsson/Documents/Theses/bsc/predictionservices/outputFiles/Forex/EURUSD/EURUSD-221021_1330/model.h5"
+                data_loader=data_loader,
+                training_params=training_params,
+                resolution=60,
+                sequence_length=7,
+                query=False,
+            )
 
 
 if __name__ == "__main__":

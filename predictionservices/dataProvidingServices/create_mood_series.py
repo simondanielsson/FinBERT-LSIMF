@@ -112,7 +112,7 @@ def compute_mood_series() -> None:
     save_path = os.path.join(ROOT_DIR, "data", "mood.csv")
 
     # load data
-    news_df = load_news(category, news_keywords, start_date, end_date, training)
+    news_df = pd.read_excel(os.path.join(ROOT_DIR, "data", "totalEURUSDnews.xlsx"))
 
     # fetch mood
     mood = populate_sentiments(news_df)

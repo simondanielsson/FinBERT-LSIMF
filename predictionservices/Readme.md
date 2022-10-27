@@ -1,3 +1,8 @@
+## Test set summary
+
+For a summary on the current experiments, and the corresponding test set performances, run `summary.py` in `/utils`.
+
+
 ## Scheduler module that schedule following services:
 
 - News Scraping services that fetch news from specialized financial newsgroupes and POST data to our Mongo engine Services.
@@ -28,4 +33,3 @@ For checking our prediction services, please refer to predictionServices folder.
 pip install
 
 python run main.py
-
