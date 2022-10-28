@@ -1,4 +1,11 @@
-# *FinBERT-SIMF* RESTFul API
+# What is this fork? 
+
+This fork is part of a bachelor's thesis at Lund School of Economics and Management. We contribute by creating a FinBERT-SIMF model with additionally accounts for the sentiment of new's *article bodies*. That sentiment is inferred using a Longformer-based sentiment classifier trained on the FinancialPhraseBank corpus. 
+
+Our changes can be found in `predictionsservices`. 
+
+
+## *FinBERT-SIMF* RESTFul API
 
 This open source and free API available financial market data, financial News and financial market time series forecasting through a deep neural network model. Our predictive model jointly used news and public market data for financial decision support. 
 
